@@ -6,19 +6,19 @@
 
 完成情况：
 
-- [ ] 复习Js语法/学习WebGL
-- [ ] 熟悉作业框架
-- [ ] Bling-Phong模型
-
-
-
-
-
-
+- [x] 复习Js语法/学习WebGL
+- [x] 熟悉作业框架
+- [x] Bling-Phong模型
 
 ## hw1
 
+完成情况：
 
+- [x] Shadow Mapping
+- [x] PCF
+- [x] PCSS
+- [x] 动态物体（可选）
+- [x] 多动态光源（可选）
 
 ## hw2
 

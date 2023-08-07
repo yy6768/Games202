@@ -1,4 +1,4 @@
-function loadOBJ(renderer, path, name, objMaterial, transform) {
+function loadOBJ(renderer, path, name, objMaterial, transform, rotateSpeed) {
 
 	const manager = new THREE.LoadingManager();
 	manager.onProgress = function (item, loaded, total) {
@@ -32,7 +32,7 @@ function loadOBJ(renderer, path, name, objMaterial, transform) {
 							let mesh = new Mesh({ name: 'aVertexPosition', array: geo.attributes.position.array },
 								{ name: 'aNormalPosition', array: geo.attributes.normal.array },
 								{ name: 'aTextureCoord', array: geo.attributes.uv.array },
-								indices, transform);
+								indices, transform, rotateSpeed);
 
 							let colorMap = new Texture();
 							if (mat.map != null) {
@@ -46,22 +46,24 @@ function loadOBJ(renderer, path, name, objMaterial, transform) {
 							let Translation = [transform.modelTransX, transform.modelTransY, transform.modelTransZ];
 							let Scale = [transform.modelScaleX, transform.modelScaleY, transform.modelScaleZ];
 
-							let light = renderer.lights[0].entity;
-							switch (objMaterial) {
-								case 'PhongMaterial':
-									material = buildPhongMaterial(colorMap, mat.specular.toArray(), light, Translation, Scale, "./src/shaders/phongShader/phongVertex.glsl", "./src/shaders/phongShader/phongFragment.glsl");
-									shadowMaterial = buildShadowMaterial(light, Translation, Scale, "./src/shaders/shadowShader/shadowVertex.glsl", "./src/shaders/shadowShader/shadowFragment.glsl");
-									break;
-							}
+							for(const lightComponent of renderer.lights) {
+								let light = lightComponent.entity;
+								switch (objMaterial) {
+									case 'PhongMaterial':
+										material = buildPhongMaterial(colorMap, mat.specular.toArray(), light, Translation, Scale, "./src/shaders/phongShader/phongVertex.glsl", "./src/shaders/phongShader/phongFragment.glsl");
+										shadowMaterial = buildShadowMaterial(light, Translation, Scale, "./src/shaders/shadowShader/shadowVertex.glsl", "./src/shaders/shadowShader/shadowFragment.glsl");
+										break;
+								}
 
-							material.then((data) => {
-								let meshRender = new MeshRender(renderer.gl, mesh, data);
-								renderer.addMeshRender(meshRender);
-							});
-							shadowMaterial.then((data) => {
-								let shadowMeshRender = new MeshRender(renderer.gl, mesh, data);
-								renderer.addShadowMeshRender(shadowMeshRender);
-							});
+								material.then((data) => {
+									let meshRender = new MeshRender(renderer.gl, mesh, data);
+									renderer.addMeshRender(meshRender);
+								});
+								shadowMaterial.then((data) => {
+									let shadowMeshRender = new MeshRender(renderer.gl, mesh, data);
+									renderer.addShadowMeshRender(shadowMeshRender);
+								});
+							}
 						}
 					});
 				}, onProgress, onError);

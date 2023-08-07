@@ -1,11 +1,12 @@
 class TRSTransform {
-    constructor(translate = [0, 0, 0], scale = [1, 1, 1]) {
+    constructor(translate = [0, 0, 0], scale = [1, 1, 1], rotate = [0,0,0]) {
         this.translate = translate;
         this.scale = scale;
+		this.rotate = rotate;
     }
 }
 class Mesh {
-	constructor(verticesAttrib, normalsAttrib, texcoordsAttrib, indices, transform) {
+	constructor(verticesAttrib, normalsAttrib, texcoordsAttrib, indices, transform, rotateSpeed) {
 		this.indices = indices;
 		this.count = indices.length;
 		this.hasVertices = false;
@@ -14,8 +15,9 @@ class Mesh {
 
 		const modelTranslation = [transform.modelTransX, transform.modelTransY, transform.modelTransZ];
 		const modelScale = [transform.modelScaleX, transform.modelScaleY, transform.modelScaleZ];
-		let meshTrans = new TRSTransform(modelTranslation, modelScale);
+		let meshTrans = new TRSTransform(modelTranslation, modelScale, [0, 0, 0]);
 		this.transform = meshTrans;
+		this.rotateSpeed = rotateSpeed;
 
 		let extraAttribs = [];
 
@@ -83,6 +85,6 @@ class Mesh {
 			20, 21, 22, 20, 22, 23,   // left
 		];
 
-		return new Mesh({ name: 'aVertexPosition', array: new Float32Array(positions) }, null, null, indices, transform);
+		return new Mesh({ name: 'aVertexPosition', array: new Float32Array(positions) }, null, null, indices, transform, 0.0);
 	}
 }

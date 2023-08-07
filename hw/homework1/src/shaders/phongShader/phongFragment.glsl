@@ -15,10 +15,18 @@ varying highp vec3 vFragPos;
 varying highp vec3 vNormal;
 
 // Shadow map related variables
-#define NUM_SAMPLES 20
+#define NUM_SAMPLES 50
 #define BLOCKER_SEARCH_NUM_SAMPLES NUM_SAMPLES
 #define PCF_NUM_SAMPLES NUM_SAMPLES
 #define NUM_RINGS 10
+
+#define SHADOW_MAP_SIZE 2048. // 可以参考engine.js里面的分辨率数据
+#define FILTER_RADIUS 3.
+
+#define LIGHT_WORLD_SIZE 5. // 光源大小
+#define NEAR_PLANE 1e-2 // 光源近平面
+#define FAR_PLANE 500. // 光源远平面大小
+#define LIGHT_SIZE_UV (LIGHT_WORLD_SIZE / FAR_PLANE)
 
 #define EPS 1e-3
 #define PI 3.141592653589793
@@ -83,30 +91,62 @@ void uniformDiskSamples( const in vec2 randomSeed ) {
   }
 }
 
-float findBlocker( sampler2D shadowMap,  vec2 uv, float zReceiver ) {
-	return 1.0;
+float useShadowMap(sampler2D shadowMap, vec4 shadowCoord){
+  
+  float closestDepth = unpack(texture2D(shadowMap, shadowCoord.xy));
+  float currentDepth = shadowCoord.z;
+  float visibility = currentDepth <= closestDepth + EPS ? 1.0 : 0.0;
+  return visibility;
 }
 
-float PCF(sampler2D shadowMap, vec4 coords) {
-  return 1.0;
+float findBlocker( sampler2D shadowMap,  vec2 uv, float zReceiver ) {
+	poissonDiskSamples(uv);
+  int blockNum = 0;
+  float blockDepth = 0.0, regionSize = LIGHT_SIZE_UV * (zReceiver - NEAR_PLANE) / zReceiver;
+  for(int i = 0; i < BLOCKER_SEARCH_NUM_SAMPLES; ++ i) {
+    float depth = unpack(texture2D(shadowMap, uv + poissonDisk[i] * regionSize));
+    if(depth + EPS <= zReceiver) {
+      blockNum ++;
+      blockDepth += depth;
+    }
+  }
+  if(blockNum == 0) 
+    return -1.0;
+  return blockDepth / float(blockNum);
+}
+
+float PCF(sampler2D shadowMap, vec4 coords, float filterSize) {
+  float currentDepth = coords.z;
+  poissonDiskSamples(coords.xy); // possion采样
+  // uniformDiskSamples(coords.xy); // 均匀采样
+  float visibility = 0.0;
+  for(int i = 0; i < PCF_NUM_SAMPLES; ++ i) {
+    float closestDepth = unpack(texture2D(shadowMap, poissonDisk[i] * filterSize + coords.xy)); 
+    if (currentDepth <= closestDepth + EPS) {
+      visibility += 1.0;
+    }
+  }
+  visibility /= float(PCF_NUM_SAMPLES); // 加权平均
+  return visibility;
 }
 
 float PCSS(sampler2D shadowMap, vec4 coords){
 
   // STEP 1: avgblocker depth
-
+  float zReceiver = coords.z;
+  float zBlock = findBlocker(shadowMap, coords.xy, zReceiver);
+  if(zBlock < -EPS)
+    return 1.0;
   // STEP 2: penumbra size
-
+  float penumbraSize = (zReceiver - zBlock) * LIGHT_SIZE_UV / zBlock;
   // STEP 3: filtering
   
-  return 1.0;
+  return PCF(shadowMap, coords, penumbraSize);
 
 }
 
 
-float useShadowMap(sampler2D shadowMap, vec4 shadowCoord){
-  return 1.0;
-}
+
 
 vec3 blinnPhong() {
   vec3 color = texture2D(uSampler, vTextureCoord).rgb;
@@ -134,12 +174,15 @@ vec3 blinnPhong() {
 void main(void) {
 
   float visibility;
-  //visibility = useShadowMap(uShadowMap, vec4(shadowCoord, 1.0));
-  //visibility = PCF(uShadowMap, vec4(shadowCoord, 1.0));
-  //visibility = PCSS(uShadowMap, vec4(shadowCoord, 1.0));
+  vec3 shadowCoord = vPositionFromLight.xyz;
+  shadowCoord = shadowCoord * 0.5 + 0.5; // NDC
+  // float filterSize = FILTER_RADIUS / SHADOW_MAP_SIZE;
+  // visibility = useShadowMap(uShadowMap, vec4(shadowCoord, 1.0));
+  // visibility = PCF(uShadowMap, vec4(shadowCoord, 1.0), filterSize);
+  visibility = PCSS(uShadowMap, vec4(shadowCoord, 1.0));
 
   vec3 phongColor = blinnPhong();
 
-  //gl_FragColor = vec4(phongColor * visibility, 1.0);
-  gl_FragColor = vec4(phongColor, 1.0);
+  gl_FragColor = vec4(phongColor * visibility, 1.0);
+  // gl_FragColor = vec4(phongColor, 1.0);
 }

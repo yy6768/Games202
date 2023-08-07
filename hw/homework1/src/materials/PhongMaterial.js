@@ -3,7 +3,6 @@ class PhongMaterial extends Material {
     constructor(color, specular, light, translate, scale, vertexShader, fragmentShader) {
         let lightMVP = light.CalcLightMVP(translate, scale);
         let lightIntensity = light.mat.GetIntensity();
-
         super({
             // Phong
             'uSampler': { type: 'texture', value: color },
@@ -14,6 +13,9 @@ class PhongMaterial extends Material {
             'uLightMVP': { type: 'matrix4fv', value: lightMVP },
 
         }, [], vertexShader, fragmentShader);
+        if(light) {
+            this.lightIndex = light.lightIndex;
+        }
     }
 }
 
