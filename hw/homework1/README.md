@@ -669,7 +669,8 @@ for (let l = 0; l < this.lights.length; l++) {
 
 - 这次作业很好的理解了Shadow Map，PCF和PCSS，实现了软阴影
 - 对于作业框架有了一个更深刻的理解
-- 提高了自己查阅的能
+- 提高了自己查阅文档的能力（WebGL，JavaScript）
+- 实现在：[yy6768/Games202: My note and hw implement of Games202 (github.com)](https://github.com/yy6768/Games202)
 
 ## 引用
 
