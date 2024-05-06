@@ -59,6 +59,8 @@ function GAMES202Main() {
 		panelModel.open();
 		panelModelTrans.open();
 		panelModelScale.open();
+		
+		
 	}
 
 	createGUI();
